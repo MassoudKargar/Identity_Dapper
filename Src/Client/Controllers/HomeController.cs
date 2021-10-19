@@ -12,7 +12,7 @@ namespace Client.Controllers
 {
     public class HomeController : Controller
     {
-#if DEBUG
+#if DEBUG 
         public const string ServerUrl = "https://localhost:44382";
         public const string ApiUrl = "https://localhost:44332";
 #else

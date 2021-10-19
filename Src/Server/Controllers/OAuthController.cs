@@ -1,8 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using Ccms.Entities.Users;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+
 using Newtonsoft.Json;
+
+using Server.Services.Jwt;
+
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,6 +20,12 @@ namespace Server.Controllers
 {
     public class OAuthController : Controller
     {
+        public OAuthController(IJwtService jwtService)
+        {
+            JwtService = jwtService;
+        }
+
+        private IJwtService JwtService { get; }
         [HttpGet]
         public IActionResult Authorize(
             string response_type, // authorization flow type 
@@ -22,19 +35,21 @@ namespace Server.Controllers
             string state) // random string generated to confirm that we are going to back to the same client
         {
             // ?a=foo&b=bar
-            var query = new QueryBuilder();
-            query.Add("redirectUri", redirect_uri);
-            query.Add("state", state);
+            var query = new QueryBuilder
+            {
+                { "redirectUri", redirect_uri },
+                { "state", state }
+            };
 
             return View(model: query.ToString());
         }
 
         [HttpPost]
-        public IActionResult Authorize(
-            string username,
-            string redirectUri,
-            string state)
+        public IActionResult Authorize(string username, string redirectUri, string state)
         {
+
+
+
             const string code = "BABAABABABA";
 
             var query = new QueryBuilder();
@@ -55,18 +70,19 @@ namespace Server.Controllers
             // some mechanism for validating the code
 
             var claims = new[]
-          {
-                new Claim(JwtRegisteredClaimNames.Sub, "some_id"),
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, "someid"),
+                new Claim("role1", "Admin"),
+                new Claim("role2", "User"),
+                new Claim("role3", "owner"),
                 new Claim("granny", "cookie")
             };
+            SigningCredentials signingCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(Constants.Secret)),
+                SecurityAlgorithms.HmacSha256);
 
-            var secretBytes = Encoding.UTF8.GetBytes(Constants.Secret);
-            var key = new SymmetricSecurityKey(secretBytes);
-            var algorithm = SecurityAlgorithms.HmacSha256;
-
-            var signingCredentials = new SigningCredentials(key, algorithm);
-
-            var token = new JwtSecurityToken(
+            JwtSecurityToken token = new JwtSecurityToken(
                 Constants.Issuer,
                 Constants.Audiance,
                 claims,
@@ -76,18 +92,29 @@ namespace Server.Controllers
                     : DateTime.Now.AddMilliseconds(1),
                 signingCredentials);
 
-            var access_token = new JwtSecurityTokenHandler().WriteToken(token);
+
+
+            var access_token = JwtService.Generate(new User()
+            {
+                FullName = "Massoud",
+                PersonId = 1,
+                UserId = 1
+            },
+            new Role()
+            {
+                RoleCaption = "سوپر یوزر",
+                RoleId = 1,
+                RoleName = "Admin"
+            });
 
             var responseObject = new
             {
-                access_token,
+                access_token = new JwtSecurityTokenHandler().WriteToken(access_token),
                 token_type = "Bearer",
                 raw_claim = "oauthTutorial",
                 refresh_token = "RefreshTokenSampleValueSomething77"
             };
-
-            var responseJson = JsonConvert.SerializeObject(responseObject);
-            var responseBytes = Encoding.UTF8.GetBytes(responseJson);
+            var responseBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(responseObject));
 
             await Response.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
 

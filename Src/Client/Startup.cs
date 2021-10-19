@@ -25,48 +25,49 @@ namespace Client
         public const string ApiUrl = "https://192.168.5.215:44332";
 #endif
         public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddAuthentication(config =>
             {
-                // We check the cookie to confirm that we are authenticated
-                config.DefaultAuthenticateScheme = "ClientCookie";
-                // When we sign in we will deal out a cookie
-                config.DefaultSignInScheme = "ClientCookie";
-                // use this to check if we are allowed to do something.
-                config.DefaultChallengeScheme = "OurServer";
-            })
-                .AddCookie("ClientCookie")
-                .AddOAuth("OurServer", config =>
+                services.AddAuthentication(config =>
                 {
-                    config.ClientId = "client_id";
-                    config.ClientSecret = "client_secret";
-                    config.CallbackPath = "/oauth/callback";
-                    config.AuthorizationEndpoint = $"{ServerUrl}/oauth/authorize";
-                    config.TokenEndpoint = $"{ServerUrl}/oauth/token";
-                    config.SaveTokens = true;
-
-                    config.Events = new OAuthEvents()
+                    // We check the cookie to confirm that we are authenticated
+                    config.DefaultAuthenticateScheme = "ClientCookie";
+                    // When we sign in we will deal out a cookie
+                    config.DefaultSignInScheme = "ClientCookie";
+                    // use this to check if we are allowed to do something.
+                    config.DefaultChallengeScheme = "OurServer";
+                })
+                    .AddCookie("ClientCookie")
+                    .AddOAuth("OurServer", config =>
                     {
-                        OnCreatingTicket = context =>
+                        config.ClientId = "client_id";
+                        config.ClientSecret = "client_secret";
+                        config.CallbackPath = "/oauth/callback";
+                        config.AuthorizationEndpoint = $"{ServerUrl}/oauth/authorize";
+                        config.TokenEndpoint = $"{ServerUrl}/oauth/token";
+                        config.SaveTokens = true;
+
+                        config.Events = new OAuthEvents()
                         {
-                            var accessToken = context.AccessToken;
-                            var base64payload = accessToken.Split('.')[1];
-                            var bytes = Convert.FromBase64String(base64payload);
-                            var jsonPayload = Encoding.UTF8.GetString(bytes);
-                            var claims = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonPayload);
-
-                            foreach (var claim in claims)
+                            OnCreatingTicket = context =>
                             {
-                                context.Identity.AddClaim(new Claim(claim.Key, claim.Value));
-                            }
+                                var accessToken = context.AccessToken;
+                                var value = Service.Decoder.Read(accessToken);
 
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
+                                var base64payload = accessToken.Split('.')[1];
+                                var bytes = Convert.FromBase64String(base64payload);
+                                var jsonPayload = Encoding.UTF8.GetString(bytes);
+                                var claims = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonPayload);
+
+                                foreach (var claim in claims)
+                                {
+                                    context.Identity.AddClaim(new Claim(claim.Key, claim.Value));
+                                }
+
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
 
             services.AddHttpClient();
-
             services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
         }

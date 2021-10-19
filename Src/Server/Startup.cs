@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+
+using Server.Services.Jwt;
+
 using System;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +44,7 @@ namespace Server
                         IssuerSigningKey = key,
                     };
                 });
-
+            services.AddScoped<IJwtService, JwtService>();
             services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
         }
