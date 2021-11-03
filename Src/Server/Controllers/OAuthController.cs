@@ -71,7 +71,8 @@ namespace Server.Controllers
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, "someid"),
+                new Claim("someid", "someid"),
+                new Claim("role1", "Admin"),
                 new Claim("role1", "Admin"),
                 new Claim("role2", "User"),
                 new Claim("role3", "owner"),
@@ -104,7 +105,7 @@ namespace Server.Controllers
             {
                 RoleCaption = "سوپر یوزر",
                 RoleId = 1,
-                RoleName = "Admin"
+                RoleName = "Owner"
             });
 
             var responseObject = new

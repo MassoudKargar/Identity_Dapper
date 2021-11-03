@@ -60,9 +60,9 @@
             //add custom claims
             List<Claim> list = new List<Claim>()
             {
-                new Claim(ClaimTypes.NameIdentifier, user.FullName),
-                new Claim(ClaimTypes.Role, role.RoleName),
-                new Claim(ClaimTypes.Role, role.RoleCaption),
+                new Claim("FullName", user.FullName),
+                new Claim("RoleName", role.RoleName),
+                new Claim("RoleCaption", role.RoleCaption),
             };
             return list;
         }

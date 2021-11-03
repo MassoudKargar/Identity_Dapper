@@ -49,19 +49,7 @@ namespace Client
                         {
                             OnCreatingTicket = context =>
                             {
-                                var accessToken = context.AccessToken;
-                                var value = Service.Decoder.Read(accessToken);
-
-                                var base64payload = accessToken.Split('.')[1];
-                                var bytes = Convert.FromBase64String(base64payload);
-                                var jsonPayload = Encoding.UTF8.GetString(bytes);
-                                var claims = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonPayload);
-
-                                foreach (var claim in claims)
-                                {
-                                    context.Identity.AddClaim(new Claim(claim.Key, claim.Value));
-                                }
-
+                                context.Identity.AddClaims(Service.Decoder.Read(context.AccessToken));
                                 return Task.CompletedTask;
                             }
                         };

@@ -1,6 +1,8 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace Client.Service
@@ -12,8 +14,9 @@ namespace Client.Service
         /// </summary>
         /// <param name="token"> توکن </param>
         /// <returns></returns>
-        public static SecurityToken Read(string token)
+        public static List<Claim> Read(string token)
         {
+            List<Claim> keys = new List<Claim>();
             var handler = new JwtSecurityTokenHandler();
             var validations = new TokenValidationParameters
             {
@@ -26,7 +29,15 @@ namespace Client.Service
                 ValidateAudience = false
             };
             handler.ValidateToken(token, validations, out SecurityToken tokenSecure);
-            return tokenSecure;
+
+            var e = tokenSecure.ToString().Replace("\"", "").Replace("\\","").Split("}.{")[1].Split(',');
+            foreach (var item in e)
+            {
+                var k = item.Split(':');
+                keys.Add(new Claim(k[0], k[1]));
+            }
+            
+            return keys;
         }
     }
 }
